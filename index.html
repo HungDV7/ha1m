@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kỷ niệm 1 tháng yêu nhau</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+</head>
+<body>
+    <!-- Phần trái tim bay -->
+    <div class="floating-hearts" id="floatingHearts"></div>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>Kỷ niệm <span class="heart">♥</span> của chúng ta</h1>
+            <div class="couple-names">
+                <span class="name">[Tên bạn]</span>
+                <span class="heart-icon">❤</span>
+                <span class="name">[Tên người yêu]</span>
+            </div>
+        </header>
+
+        <!-- Bộ đếm ngược -->
+        <section class="countdown-container">
+            <h2 class="countdown-title">Chúng ta đã yêu nhau được...</h2>
+            <div class="countdown" id="countdown">
+                <div class="countdown-item">
+                    <div class="countdown-number" id="days">30</div>
+                    <div class="countdown-label">Ngày</div>
+                </div>
+                <div class="countdown-item">
+                    <div class="countdown-number" id="hours">0</div>
+                    <div class="countdown-label">Giờ</div>
+                </div>
+                <div class="countdown-item">
+                    <div class="countdown-number" id="minutes">0</div>
+                    <div class="countdown-label">Phút</div>
+                </div>
+                <div class="countdown-item">
+                    <div class="countdown-number" id="seconds">0</div>
+                    <div class="countdown-label">Giây</div>
+                </div>
+            </div>
+            <p class="countdown-date" id="countdownDate"></p>
+        </section>
+
+        <!-- Album ảnh -->
+        <section class="photo-album">
+            <h2 class="section-title">Những kỷ niệm đáng nhớ</h2>
+            <!-- <p class="section-subtitle">Những khoảnh khắc đẹp nhất của chúng ta trong tháng đầu tiên</p> -->
+            <div class="photo-grid" id="photoGrid">
+                <!-- Ảnh sẽ được thêm bằng JavaScript -->
+            </div>
+        </section>
+
+        <!-- Lời nhắn yêu thương -->
+        <section class="message-container">
+            <h2 class="section-title">Lời nhắn</h2>
+            <!-- <div class="message" id="loveMessage">
+                
+            </div> -->
+            <div class="signature" id="signature">Đôi bạn trẻ đáng iuu</div>
+        </section>
+
+        <!-- Phần thêm kỷ niệm (FORM ĐƠN GIẢN - chỉ có nút gọi form CRUD) -->
+        <section class="memory-form">
+            <h3 class="form-title"><i class="fas fa-book"></i> Thêm kỷ niệm của chúng mình</h3>
+            <div class="form-description">
+                <!-- <p>Nhấn nút bên dưới để thêm kỷ niệm mới với đầy đủ thông tin như tiêu đề, ngày tháng, địa điểm và ảnh.</p> -->
+            </div>
+            <button class="form-button" onclick="window.crudManager.showMemoryForm()">
+                <i class="fas fa-plus-circle"></i> Thêm kỷ niệm mới
+            </button>
+        </section>
+
+        <!-- Kỷ niệm đã lưu -->
+        <section class="memories-container">
+            <h2 class="section-title"><i class="fas fa-heart"></i> Kỷ niệm của chúng ta</h2>
+            <div id="memoriesList">
+                <!-- Các kỷ niệm sẽ được thêm ở đây -->
+            </div>
+        </section>
+
+        <!-- Phần tương tác -->
+        <section class="interactive">
+            <h2 class="section-title">Gửi yêu thương</h2>
+            <div class="love-buttons">
+                <button class="love-button" onclick="showLove()">
+                    <i class="fas fa-heart"></i> Gửi yêu thương
+                </button>
+                <button class="love-button secondary" onclick="playMusic()">
+                    <i class="fas fa-music"></i> Bật nhạc
+                </button>
+                <button class="love-button secondary" onclick="changeTheme()">
+                    <i class="fas fa-palette"></i> Đổi nền
+                </button>
+            </div>
+            <div id="loveMessageDisplay" class="love-message-display"></div>
+        </section>
+
+        <!-- Audio player (ẩn) -->
+        <audio id="backgroundMusic" loop>
+            <source src="/music/cute.mp3" type="audio/mpeg">
+            Trình duyệt của bạn không hỗ trợ phát nhạc.
+        </audio>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <!-- <p>Trang web được tạo với tất cả tình yêu • Kỷ niệm 1 tháng yêu nhau</p> -->
+                <p>© <span id="currentYear"></span> • iuuuu em nhìuu</p>
+                <div class="footer-hearts">
+                    <span>❤</span>
+                    <span>❤</span>
+                    <span>❤</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Floating Action Buttons -->
+    <div class="floating-actions">
+        <button class="floating-btn" id="addMemoryBtn" title="Thêm kỷ niệm mới">
+            <i class="fas fa-plus"></i>
+        </button>
+        <button class="floating-btn" id="addPhotoBtn" title="Thêm ảnh mới">
+            <i class="fas fa-camera"></i>
+        </button>
+    </div>
+
+    <!-- Scripts - THỨ TỰ QUAN TRỌNG -->
+    <script src="data-manager.js"></script>
+    <script src="crud-manager.js"></script>
+    <script src="script.js"></script>
+
+    <script>
+        // Simple initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('💖 Love Anniversary App loaded');
+            
+            // Update current year
+            document.getElementById('currentYear').textContent = new Date().getFullYear();
+            
+            // Show welcome message after everything loads
+            setTimeout(() => {
+                if (window.crudManager && window.crudManager.showNotification) {
+                    window.crudManager.showNotification('Chào mừng đến với trang kỷ niệm tình yêu! ❤️');
+                }
+            }, 1500);
+        });
+    </script>
+</body>
+</html>
