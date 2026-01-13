@@ -604,7 +604,7 @@
                     <i class="fas fa-exclamation-triangle"></i>
                     <p>Có lỗi khi tải ảnh</p>
                     <button class="btn-primary" onclick="window.crudManager.renderPhotos()">
-                        <i class="fas fa-redo"></i> Thử lại
+                        <i class="fas fa-redo"></i> Thử lạii
                     </button>
                 </div>
             `;

@@ -329,18 +329,6 @@ function getSamplePhotos() {
             url: 'https://images.unsplash.com/photo-1518568814500-bf0f8d125f46?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80',
             caption: 'Khoảnh khắc đầu tiên',
             date: new Date().toISOString()
-        },
-        {
-            id: 'sample-2',
-            url: 'https://images.unsplash.com/photo-1518568814500-bf0f8d125f46?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-            caption: 'Ngày hạnh phúc',
-            date: new Date().toISOString()
-        },
-        {
-            id: 'sample-3',
-            url: 'https://images.unsplash.com/photo-1518568814500-bf0f8d125f46?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=40',
-            caption: 'Nụ cười tỏa nắng',
-            date: new Date().toISOString()
         }
     ];
 }

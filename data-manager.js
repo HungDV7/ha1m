@@ -16,14 +16,10 @@
             
             // Thông điệp yêu thương
             loveMessages: [
-                "Anh/Em yêu em/anh nhiều lắm! 💖",
-                "Mỗi ngày bên em/anh là một ngày hạnh phúc!",
-                "Cảm ơn em/anh vì đã đến bên anh/em!",
-                "Chúng ta sẽ mãi mãi bên nhau nhé!",
-                "Em/Anh là điều tuyệt vời nhất với anh/em!",
-                "Yêu em/anh đến tận cùng vũ trụ này!",
-                "Mãi mãi chỉ yêu mình em/anh thôi!",
-                "Hạnh phúc nhất là được ở bên em/anh!"
+                "Anh yêu em nhiều lắm! 💖",
+                "Mỗi ngày bên em là một ngày hạnh phúc!",
+                "Cảm ơn em vì đã đến bên anh!",
+                "Hạnh phúc nhất là được ở bên em!"
             ],
             
             // Ảnh mẫu (sẽ được thay thế bằng LocalStorage)
