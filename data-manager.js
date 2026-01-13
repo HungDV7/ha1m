@@ -6,6 +6,8 @@
     if (!window.CONFIG) {
         window.CONFIG = {
             // Thay đổi ngày bắt đầu yêu nhau của bạn
+            // CHÚ Ý: Sử dụng Date(year, monthIndex, day, hour, minute, second)
+            // monthIndex: 0 = tháng 1, 11 = tháng 12
             startDate: new Date(2026, 0, 1, 0, 0, 0), // 1/1/2026 00:00:00
             
             // Tên cặp đôi
@@ -24,9 +26,7 @@
             
             // Ảnh mẫu (sẽ được thay thế bằng LocalStorage)
             defaultPhotos: [
-                { id: '1', url: 'https://images.unsplash.com/photo-1518568814500-bf0f8d125f46?ixlib=rb-4.0.3&auto=format&fit=crop&w=687&q=80', caption: 'Ngày đầu tiên' },
-                { id: '2', url: 'https://images.unsplash.com/photo-1529254479751-fbacb4c7a587?ixlib=rb-4.0.3&auto=format&fit=crop&w=1170&q=80', caption: 'Cùng nhau dạo phố' },
-                { id: '3', url: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?ixlib=rb-4.0.3&auto=format&fit=crop&w=1169&q=80', caption: 'Những bữa ăn cùng nhau' }
+                { id: '1', url: 'https://images.unsplash.com/photo-1518568814500-bf0f8d125f46?ixlib=rb-4.0.3&auto=format&fit=crop&w=687&q=80', caption: 'Ngày đầu tiên' }
             ]
         };
     }
@@ -41,6 +41,7 @@
         
         // Cấu trúc dữ liệu mặc định
         getDefaultData() {
+            // SỬA QUAN TRỌNG: Lưu startDate dưới dạng ISO string đầy đủ
             return {
                 version: '2.0',
                 lastUpdated: new Date().toISOString(),
@@ -57,7 +58,8 @@
                         favoriteColor: '#4d94ff',
                         avatar: ''
                     },
-                    startDate: CONFIG.startDate.toISOString().split('T')[0],
+                    // SỬA: Lưu đầy đủ ISO string để tránh lỗi múi giờ
+                    startDate: CONFIG.startDate.toISOString(),
                     specialDates: []
                 },
                 memories: [],
@@ -108,6 +110,13 @@
                         ...newData.coupleInfo,
                         ...oldData.coupleInfo
                     };
+                    
+                    // FIX: Chuyển đổi startDate nếu nó chỉ là string ngày
+                    if (oldData.coupleInfo.startDate && !oldData.coupleInfo.startDate.includes('T')) {
+                        // Nếu startDate chỉ là "YYYY-MM-DD", chuyển thành ISO string
+                        const dateObj = new Date(oldData.coupleInfo.startDate + 'T00:00:00');
+                        newData.coupleInfo.startDate = dateObj.toISOString();
+                    }
                 }
                 
                 // Giữ lại settings nếu có
@@ -124,6 +133,25 @@
             return oldData;
         }
         
+        // Lấy ngày bắt đầu chính xác (hàm mới)
+        getStartDate() {
+            const startDateStr = this.currentData.coupleInfo.startDate;
+            
+            // Nếu là string ISO đầy đủ
+            if (startDateStr.includes('T')) {
+                return new Date(startDateStr);
+            }
+            // Nếu chỉ là date string "YYYY-MM-DD"
+            else if (startDateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                // Thêm thời gian và đặt múi giờ UTC để tránh sai lệch
+                return new Date(startDateStr + 'T00:00:00Z');
+            }
+            // Fallback: dùng CONFIG
+            else {
+                return CONFIG.startDate;
+            }
+        }
+        
         // Lưu dữ liệu
         saveData() {
             try {
@@ -132,7 +160,10 @@
                 
                 // Dispatch event để các component khác biết
                 const event = new CustomEvent('dataSaved', { 
-                    detail: { timestamp: new Date().toISOString() }
+                    detail: { 
+                        timestamp: new Date().toISOString(),
+                        startDate: this.currentData.coupleInfo.startDate 
+                    }
                 });
                 document.dispatchEvent(event);
                 
@@ -277,10 +308,22 @@
                 ...this.currentData.coupleInfo,
                 ...info
             };
+            
+            // FIX: Nếu update startDate, đảm bảo nó là ISO string
+            if (info.startDate && typeof info.startDate === 'string') {
+                if (!info.startDate.includes('T')) {
+                    // Chuyển đổi "YYYY-MM-DD" thành ISO string
+                    const dateObj = new Date(info.startDate + 'T00:00:00');
+                    this.currentData.coupleInfo.startDate = dateObj.toISOString();
+                }
+            }
+            
             this.saveData();
             
             // Dispatch event
-            const event = new CustomEvent('coupleInfoUpdated');
+            const event = new CustomEvent('coupleInfoUpdated', { 
+                detail: { startDate: this.currentData.coupleInfo.startDate }
+            });
             document.dispatchEvent(event);
             
             return true;
@@ -342,20 +385,39 @@
             return Date.now().toString(36) + Math.random().toString(36).substr(2);
         }
         
-        // Get statistics
+        // Get statistics - SỬA LẠI ĐỂ TRÁNH LỖI MÚI GIỜ
         getStats() {
             const data = this.currentData;
-            const startDate = new Date(data.coupleInfo.startDate);
+            const startDate = this.getStartDate(); // Sử dụng hàm getStartDate mới
             const today = new Date();
-            const diffTime = Math.abs(today - startDate);
-            const daysTogether = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            // Tính toán số ngày chính xác
+            const startUTC = Date.UTC(
+                startDate.getFullYear(), 
+                startDate.getMonth(), 
+                startDate.getDate()
+            );
+            const todayUTC = Date.UTC(
+                today.getFullYear(), 
+                today.getMonth(), 
+                today.getDate()
+            );
+            
+            const diffTime = todayUTC - startUTC;
+            const daysTogether = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
             
             return {
                 totalMemories: data.memories.length,
                 totalPhotos: data.photos.length,
                 totalLoveNotes: data.loveNotes.length,
                 daysTogether: daysTogether,
-                lastUpdated: data.lastUpdated
+                lastUpdated: data.lastUpdated,
+                // Thêm thông tin debug
+                debug: {
+                    startDateISO: data.coupleInfo.startDate,
+                    startDateObject: startDate.toString(),
+                    today: today.toString()
+                }
             };
         }
     }
@@ -366,4 +428,6 @@
     }
     
     console.log('✅ DataManager loaded successfully');
+    console.log('📅 Ngày bắt đầu được cấu hình:', CONFIG.startDate.toString());
+    console.log('📅 Ngày bắt đầu trong dữ liệu:', window.dataManager.currentData.coupleInfo.startDate);
 })();
