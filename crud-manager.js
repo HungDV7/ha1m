@@ -16,16 +16,39 @@
         }
 
         initialize() {
-            if (!window.dataManager) {
-                console.log('⏳ Waiting for dataManager...');
-                setTimeout(() => this.initialize(), 100);
-                return;
-            }
+            // Đợi 3 giây cho Firebase load
+            setTimeout(() => {
+                if (!window.dataManager) {
+                    console.warn('⚠️ dataManager không tải được, dùng fallback data');
+                    // Tạo dataManager giả để app chạy
+                    if (!window.dataManager) {
+                        window.dataManager = {
+                            currentData: {
+                                memories: [],
+                                photos: [],
+                                coupleInfo: {
+                                    person1: { name: "Hung Duong" },
+                                    person2: { name: "Thuy Hang" },
+                                    startDate: "2026-01-01T00:00:00.000Z"
+                                }
+                            },
+                            addMemory: function (memory) {
+                                this.currentData.memories.push(memory);
+                                return memory;
+                            },
+                            addPhoto: function (photo) {
+                                this.currentData.photos.push(photo);
+                                return photo;
+                            }
+                        };
+                    }
+                }
 
-            console.log('✅ CRUDManager ready');
-            this.setupEventListeners();
-            this.renderMemories();
-            this.renderPhotos();
+                console.log('✅ CRUDManager ready');
+                this.setupEventListeners();
+                this.renderMemories();
+                this.renderPhotos();
+            }, 3000);
         }
 
         // ==================== MEMORIES CRUD ====================

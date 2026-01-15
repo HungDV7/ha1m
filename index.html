@@ -8,8 +8,54 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="images/favicon.ico">
+    
+    <!-- LOADING SCREEN CSS -->
+    <style>
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #ff6b9d, #4d94ff);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            color: white;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .loading-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-spinner"></div>
+        <h2>Đang tải kỷ niệm tình yêu... 💖</h2>
+        <p id="loadingStatus">Kết nối với Firebase...</p>
+    </div>
+
     <!-- Phần trái tim bay -->
     <div class="floating-hearts" id="floatingHearts"></div>
 
@@ -51,7 +97,6 @@
         <!-- Album ảnh -->
         <section class="photo-album">
             <h2 class="section-title">Những kỷ niệm đáng nhớ</h2>
-            <!-- <p class="section-subtitle">Những khoảnh khắc đẹp nhất của chúng ta trong tháng đầu tiên</p> -->
             <div class="photo-grid" id="photoGrid">
                 <!-- Ảnh sẽ được thêm bằng JavaScript -->
             </div>
@@ -60,18 +105,13 @@
         <!-- Lời nhắn yêu thương -->
         <section class="message-container">
             <h2 class="section-title">Lời nhắn</h2>
-            <!-- <div class="message" id="loveMessage">
-                
-            </div> -->
             <div class="signature" id="signature">Đôi bạn trẻ đáng iuuu</div>
         </section>
 
-        <!-- Phần thêm kỷ niệm (FORM ĐƠN GIẢN - chỉ có nút gọi form CRUD) -->
+        <!-- Phần thêm kỷ niệm -->
         <section class="memory-form">
             <h3 class="form-title"><i class="fas fa-book"></i> Thêm kỷ niệm của chúng mình</h3>
-            <div class="form-description">
-                <!-- <p>Nhấn nút bên dưới để thêm kỷ niệm mới với đầy đủ thông tin như tiêu đề, ngày tháng, địa điểm và ảnh.</p> -->
-            </div>
+            <div class="form-description"></div>
             <button class="form-button" onclick="window.crudManager.showMemoryForm()">
                 <i class="fas fa-plus-circle"></i> Thêm kỷ niệm mới
             </button>
@@ -111,7 +151,6 @@
         <!-- Footer -->
         <footer class="footer">
             <div class="footer-content">
-                <!-- <p>Trang web được tạo với tất cả tình yêu • Kỷ niệm 1 tháng yêu nhau</p> -->
                 <p>© <span id="currentYear"></span> • iuuuu em nhìuu</p>
                 <div class="footer-hearts">
                     <span>❤</span>
@@ -132,25 +171,75 @@
         </button>
     </div>
 
-    <!-- Scripts - THỨ TỰ QUAN TRỌNG -->
-    <script src="data-manager.js"></script>
+    <!-- ========== FIREBASE SDK ========== -->
+    <!-- Dùng phiên bản 8.10.0 cho tương thích tốt -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+
+    <!-- ========== APP SCRIPTS ========== -->
+    <!-- ĐẶT CRUD-MANAGER VÀ SCRIPT.JS TRƯỚC -->
     <script src="crud-manager.js"></script>
     <script src="script.js"></script>
+    
+    <!-- Firebase Manager (load sau cùng) -->
+    <script src="firebase-manager.js"></script>
 
+    <!-- ========== INITIALIZATION ========== -->
     <script>
-        // Simple initialization
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('💖 Love Anniversary App loaded');
+        // Firebase configuration - DÙNG CONFIG CỦA BẠN
+        const firebaseConfig = {
+            apiKey: "AIzaSyCzUoT4z5FUan4HZfQvo9OTWwkE43kKfvU",
+            authDomain: "thursday-a5b7c.firebaseapp.com",
+            projectId: "thursday-a5b7c",
+            storageBucket: "thursday-a5b7c.firebasestorage.app",
+            messagingSenderId: "1099485371344",
+            appId: "1:1099485371344:web:7de3d4f95b5285f006b7d5",
+            measurementId: "G-SQJW67LY57"
+        };
+
+        // Initialize Firebase khi DOM ready
+        document.addEventListener('DOMContentLoaded', function () {
+            console.log('💖 Love Anniversary App loading...');
             
             // Update current year
             document.getElementById('currentYear').textContent = new Date().getFullYear();
             
-            // Show welcome message after everything loads
-            setTimeout(() => {
-                if (window.crudManager && window.crudManager.showNotification) {
-                    window.crudManager.showNotification('Chào mừng đến với trang kỷ niệm tình yêu! ❤️');
+            try {
+                // Khởi tạo Firebase
+                if (typeof firebase !== 'undefined') {
+                    firebase.initializeApp(firebaseConfig);
+                    console.log('✅ Firebase initialized');
+                } else {
+                    console.error('❌ Firebase SDK không được load');
                 }
-            }, 1500);
+            } catch (error) {
+                console.error('❌ Lỗi khởi tạo Firebase:', error);
+            }
+            
+            // Ẩn loading screen sau 10 giây (fallback)
+            setTimeout(() => {
+                const loadingScreen = document.getElementById('loadingScreen');
+                if (loadingScreen && !loadingScreen.classList.contains('hidden')) {
+                    loadingScreen.classList.add('hidden');
+                    console.log('⚠️ Fallback: Ẩn loading screen sau timeout');
+                }
+            }, 10000);
+        });
+
+        // Xử lý khi Firebase ready
+        document.addEventListener('firebaseReady', function () {
+            console.log('🎉 Firebase ready event received');
+            
+            const loadingScreen = document.getElementById('loadingScreen');
+            const loadingStatus = document.getElementById('loadingStatus');
+            
+            if (loadingScreen) {
+                loadingStatus.textContent = 'Đã tải xong! Đang hiển thị...';
+                setTimeout(() => {
+                    loadingScreen.classList.add('hidden');
+                }, 1000);
+            }
         });
     </script>
 </body>

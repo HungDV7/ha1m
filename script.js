@@ -1,8 +1,9 @@
-// script.js - Trang web kỷ niệm 1 tháng yêu nhau (ĐÃ SỬA LỖI HOÀN TOÀN)
+// script.js - Trang web kỷ niệm 1 tháng yêu nhau (ĐÃ SỬA CHO FIREBASE)
 
 // ==================== GLOBAL VARIABLES ====================
 let isMusicPlaying = false;
 let audioInstance = null;
+let appStarted = false;
 
 // ==================== INITIALIZATION ====================
 
@@ -12,67 +13,112 @@ document.addEventListener('DOMContentLoaded', function () {
     // Cập nhật năm hiện tại ngay lập tức
     updateCurrentYear();
 
-    // Chờ dataManager sẵn sàng
-    const waitForDataManager = setInterval(() => {
-        if (window.dataManager && window.dataManager.currentData) {
-            clearInterval(waitForDataManager);
-            console.log('✅ dataManager đã sẵn sàng');
-            startApp();
+    // KHỞI TẠO PHẦN KHÔNG CẦN DATA TRƯỚC
+    initializeNoDataParts();
+
+    // LẮNG NGHE KHI FIREBASE READY
+    document.addEventListener('firebaseReady', function(event) {
+        console.log('✅ Firebase ready event received');
+        startAppWithFirebase(event.detail.data);
+    });
+
+    // FALLBACK: Nếu sau 5 giây Firebase chưa ready
+    setTimeout(() => {
+        if (!appStarted) {
+            console.warn('⚠️ Firebase timeout, starting app with default data');
+            startAppWithDefaultData();
         }
-
-        // Timeout sau 3 giây nếu dataManager không load
-        setTimeout(() => {
-            if (window.dataManager) return;
-            clearInterval(waitForDataManager);
-            console.warn('⚠️ dataManager không tải được, sử dụng dữ liệu mặc định');
-            startApp();
-        }, 3000);
-    }, 100);
-
-    function startApp() {
-        try {
-            console.log('🚀 Bắt đầu khởi động app...');
-
-            // Khởi tạo audio
-            initializeAudio();
-
-            // Cập nhật thông tin cặp đôi
-            updateCoupleNames();
-
-            // Khởi tạo bộ đếm ngược
-            initCountdown();
-
-            // Tạo trái tim bay
-            createFloatingHearts();
-
-            // Tạo album ảnh từ dataManager - ĐÃ SỬA
-            renderPhotosFromData();
-
-            // Tải kỷ niệm mẫu (nếu chưa có)
-            loadMemoriesIfEmpty();
-
-            // Cập nhật thông điệp theo thời gian trong ngày
-            updateGreeting();
-
-            // Thêm sự kiện cho modal ảnh
-            setupPhotoModal();
-
-            // Thiết lập event listeners
-            setupEventListeners();
-
-            console.log('✅ App đã khởi động thành công!');
-
-            // Hiển thị thông báo chào mừng
-            setTimeout(() => {
-                showMessage('Chào mừng đến với trang kỷ niệm tình yêu! 💝', 'success');
-            }, 1000);
-
-        } catch (error) {
-            console.error('❌ Lỗi khi khởi động app:', error);
-            showMessage('Có lỗi xảy ra khi khởi động ứng dụng', 'error');
-        }
-    }
+    }, 5000);
 });
+
+// Khởi tạo các phần không cần data
+function initializeNoDataParts() {
+    try {
+        console.log('🚀 Khởi tạo phần không cần data...');
+        
+        // Khởi tạo audio
+        initializeAudio();
+        
+        // Tạo trái tim bay
+        createFloatingHearts();
+        
+        // Thêm sự kiện cho modal ảnh
+        setupPhotoModal();
+        
+        // Thiết lập event listeners cơ bản
+        setupBasicEventListeners();
+        
+        console.log('✅ Đã khởi tạo phần không cần data');
+        
+    } catch (error) {
+        console.error('❌ Lỗi khi khởi tạo phần không cần data:', error);
+    }
+}
+
+// Bắt đầu app với data từ Firebase
+function startAppWithFirebase(firebaseData) {
+    if (appStarted) return; // Tránh khởi động nhiều lần
+    
+    try {
+        appStarted = true;
+        console.log('🚀 Bắt đầu app với Firebase data...');
+        
+        // Cập nhật thông tin cặp đôi
+        updateCoupleNames(firebaseData);
+        
+        // Khởi tạo bộ đếm ngược
+        initCountdown(firebaseData);
+        
+        // Tạo album ảnh từ dataManager
+        renderPhotosFromData(firebaseData);
+        
+        // Tải kỷ niệm mẫu (nếu chưa có)
+        loadMemoriesIfEmpty(firebaseData);
+        
+        // Cập nhật thông điệp theo thời gian trong ngày
+        updateGreeting();
+        
+        console.log('✅ App đã khởi động thành công với Firebase!');
+        
+        // Hiển thị thông báo chào mừng
+        setTimeout(() => {
+            showMessage('Chào mừng đến với trang kỷ niệm tình yêu! 💝', 'success');
+        }, 1000);
+
+    } catch (error) {
+        console.error('❌ Lỗi khi khởi động app với Firebase:', error);
+        showMessage('Có lỗi xảy ra khi khởi động ứng dụng', 'error');
+    }
+}
+
+// Fallback: Bắt đầu app với data mặc định
+function startAppWithDefaultData() {
+    if (appStarted) return;
+    
+    try {
+        appStarted = true;
+        console.log('🚀 Bắt đầu app với data mặc định...');
+        
+        // Cập nhật thông tin cặp đôi với data mặc định
+        updateCoupleNames();
+        
+        // Khởi tạo bộ đếm ngược mặc định
+        initCountdown();
+        
+        // Tạo album ảnh mẫu
+        renderSamplePhotos();
+        
+        console.log('✅ App đã khởi động với data mặc định!');
+        
+        // Hiển thị thông báo
+        setTimeout(() => {
+            showMessage('Đang dùng chế độ offline. Một số tính năng có thể bị hạn chế.', 'info');
+        }, 1000);
+
+    } catch (error) {
+        console.error('❌ Lỗi khi khởi động app mặc định:', error);
+    }
+}
 
 // ==================== AUDIO FUNCTIONS ====================
 
@@ -84,10 +130,9 @@ function initializeAudio() {
             return;
         }
 
-        audioInstance.volume = 0.3; // Âm lượng thấp hơn
+        audioInstance.volume = 0.3;
         audioInstance.muted = false;
 
-        // Xử lý lỗi autoplay policy của trình duyệt
         audioInstance.addEventListener('play', () => {
             isMusicPlaying = true;
             console.log('🎵 Nhạc đang phát');
@@ -109,7 +154,6 @@ function initializeAudio() {
     }
 }
 
-// ĐÃ SỬA LỖI: Hàm playMusic mới tránh lỗi "play() request was interrupted"
 function playMusic() {
     try {
         if (!audioInstance) {
@@ -123,7 +167,6 @@ function playMusic() {
         const button = event?.target || document.querySelector('.love-button[onclick*="playMusic"]');
 
         if (isMusicPlaying) {
-            // Nếu đang phát thì pause
             audioInstance.pause();
             isMusicPlaying = false;
             showMessage('Nhạc nền đã tạm dừng', 'info');
@@ -131,7 +174,6 @@ function playMusic() {
                 button.innerHTML = '<i class="fas fa-music"></i> Bật nhạc';
             }
         } else {
-            // Nếu chưa phát thì play với promise
             const playPromise = audioInstance.play();
 
             if (playPromise !== undefined) {
@@ -148,11 +190,9 @@ function playMusic() {
                         console.error('❌ Lỗi khi phát nhạc:', error);
                         isMusicPlaying = false;
 
-                        // Xử lý lỗi autoplay policy
                         if (error.name === 'NotAllowedError') {
                             showMessage('Vui lòng tương tác với trang trước khi phát nhạc', 'warning');
 
-                            // Khi user click bất kỳ đâu trên trang, enable audio
                             const enableAudio = () => {
                                 audioInstance.play()
                                     .then(() => {
@@ -178,10 +218,10 @@ function playMusic() {
     }
 }
 
-// ==================== PHOTO FUNCTIONS (ĐÃ SỬA HOÀN TOÀN) ====================
+// ==================== PHOTO FUNCTIONS ====================
 
-// HÀM MỚI: Render ảnh từ dataManager với nút sửa/xóa đầy đủ
-function renderPhotosFromData() {
+// Render ảnh từ data
+function renderPhotosFromData(firebaseData = null) {
     try {
         const photoGrid = document.getElementById('photoGrid');
         if (!photoGrid) {
@@ -189,15 +229,15 @@ function renderPhotosFromData() {
             return;
         }
 
-        // Lấy photos từ dataManager
+        // Lấy photos từ data
         let photos = [];
-        if (window.dataManager && window.dataManager.currentData) {
+        if (firebaseData && firebaseData.photos) {
+            photos = firebaseData.photos;
+            console.log(`📸 Loaded ${photos.length} photos from Firebase`);
+        } else if (window.dataManager && window.dataManager.currentData) {
             photos = window.dataManager.currentData.photos;
             console.log(`📸 Loaded ${photos.length} photos from dataManager`);
-        }
-
-        // Nếu không có photos, sử dụng mẫu
-        if (photos.length === 0) {
+        } else {
             console.log('📸 Using sample photos');
             photos = getSamplePhotos();
         }
@@ -211,7 +251,7 @@ function renderPhotosFromData() {
             photoGrid.appendChild(photoItem);
         });
 
-        console.log(`✅ Đã render ${photos.length} ảnh với nút sửa/xóa`);
+        console.log(`✅ Đã render ${photos.length} ảnh`);
 
     } catch (error) {
         console.error('❌ Lỗi khi render photos:', error);
@@ -219,7 +259,28 @@ function renderPhotosFromData() {
     }
 }
 
-// HÀM MỚI: Tạo element cho mỗi ảnh
+// Render ảnh mẫu (fallback)
+function renderSamplePhotos() {
+    try {
+        const photoGrid = document.getElementById('photoGrid');
+        if (!photoGrid) return;
+
+        const photos = getSamplePhotos();
+        
+        photoGrid.innerHTML = '';
+        
+        photos.forEach((photo, index) => {
+            const photoItem = createPhotoElement(photo, index);
+            photoGrid.appendChild(photoItem);
+        });
+        
+        console.log(`✅ Đã render ${photos.length} ảnh mẫu`);
+        
+    } catch (error) {
+        console.error('❌ Lỗi khi render sample photos:', error);
+    }
+}
+
 function createPhotoElement(photo, index) {
     const photoItem = document.createElement('div');
     photoItem.className = 'photo-item';
@@ -229,12 +290,10 @@ function createPhotoElement(photo, index) {
     const safeCaption = escapeHtml(caption);
     const safeUrl = escapeHtml(photo.url);
 
-    // Tạo HTML với nút sửa/xóa CHO TẤT CẢ ẢNH
     photoItem.innerHTML = `
         <img src="${photo.url}" alt="${caption}" loading="lazy" 
              onerror="this.src='https://images.unsplash.com/photo-1518568814500-bf0f8d125f46?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80'">
         
-        <!-- Photo overlay với nút action -->
         <div class="photo-overlay">
             <div class="photo-actions">
                 <button class="photo-action-btn edit-btn" title="Sửa mô tả">
@@ -249,29 +308,22 @@ function createPhotoElement(photo, index) {
             </div>
         </div>
         
-        <!-- Caption (ẩn khi hover) -->
         <div class="photo-caption">${safeCaption}</div>
     `;
 
-    // Thêm event listeners
     setupPhotoEventListeners(photoItem, photo, index);
-
     return photoItem;
 }
 
-// HÀM MỚI: Thiết lập event listeners cho ảnh
 function setupPhotoEventListeners(photoItem, photo, index) {
     const photoId = photo.id || index;
 
-    // Click toàn bộ ảnh để xem lớn
     photoItem.addEventListener('click', (e) => {
-        // Không trigger nếu click vào nút action
         if (!e.target.closest('.photo-action-btn')) {
             openPhotoModal(photo.url, photo.caption || 'Ảnh kỷ niệm');
         }
     });
 
-    // Nút xem ảnh lớn
     const viewBtn = photoItem.querySelector('.view-btn');
     if (viewBtn) {
         viewBtn.addEventListener('click', (e) => {
@@ -280,7 +332,6 @@ function setupPhotoEventListeners(photoItem, photo, index) {
         });
     }
 
-    // Nút sửa
     const editBtn = photoItem.querySelector('.edit-btn');
     if (editBtn) {
         editBtn.addEventListener('click', (e) => {
@@ -289,7 +340,6 @@ function setupPhotoEventListeners(photoItem, photo, index) {
         });
     }
 
-    // Nút xóa
     const deleteBtn = photoItem.querySelector('.delete-btn');
     if (deleteBtn) {
         deleteBtn.addEventListener('click', (e) => {
@@ -299,21 +349,19 @@ function setupPhotoEventListeners(photoItem, photo, index) {
     }
 }
 
-// HÀM MỚI: Hiển thị prompt để sửa ảnh
 function editPhotoPrompt(photoId, currentCaption) {
     const newCaption = prompt('Nhập mô tả mới cho ảnh:', currentCaption || '');
     if (newCaption !== null && window.dataManager) {
         window.dataManager.updatePhoto(photoId, { caption: newCaption });
-        renderPhotosFromData(); // Re-render
+        renderPhotosFromData();
         showMessage('Đã cập nhật mô tả ảnh', 'success');
     }
 }
 
-// HÀM MỚI: Hiển thị confirm để xóa ảnh
 function deletePhotoPrompt(photoId, photoName) {
     if (confirm(`Bạn có chắc muốn xóa ảnh "${photoName}"?`)) {
         if (window.dataManager && window.dataManager.deletePhoto(photoId)) {
-            renderPhotosFromData(); // Re-render
+            renderPhotosFromData();
             showMessage('Đã xóa ảnh', 'success');
         } else {
             showMessage('Không thể xóa ảnh', 'error');
@@ -321,7 +369,6 @@ function deletePhotoPrompt(photoId, photoName) {
     }
 }
 
-// HÀM MỚI: Lấy ảnh mẫu
 function getSamplePhotos() {
     return [
         {
@@ -335,15 +382,21 @@ function getSamplePhotos() {
 
 // ==================== CORE FUNCTIONS ====================
 
-// Cập nhật tên cặp đôi
-function updateCoupleNames() {
+// Cập nhật tên cặp đôi (nhận data từ Firebase)
+function updateCoupleNames(firebaseData = null) {
     try {
         const nameElements = document.querySelectorAll('.couple-names .name');
         if (nameElements.length >= 2) {
             let person1 = '[Tên bạn]';
             let person2 = '[Tên người yêu]';
 
-            if (window.dataManager && window.dataManager.currentData) {
+            // Ưu tiên data từ Firebase trước
+            if (firebaseData && firebaseData.coupleInfo) {
+                person1 = firebaseData.coupleInfo.person1?.name || person1;
+                person2 = firebaseData.coupleInfo.person2?.name || person2;
+            } 
+            // Sau đó mới đến dataManager
+            else if (window.dataManager && window.dataManager.currentData) {
                 const coupleInfo = window.dataManager.currentData.coupleInfo;
                 person1 = coupleInfo.person1.name || person1;
                 person2 = coupleInfo.person2.name || person2;
@@ -371,37 +424,40 @@ function updateCurrentYear() {
     }
 }
 
-// Bộ đếm ngược
-function initCountdown() {
+// Bộ đếm ngược (nhận data từ Firebase)
+function initCountdown(firebaseData = null) {
     try {
         console.log('⏳ Initializing countdown...');
         
         const countdownDateElement = document.getElementById('countdownDate');
         
-        // PHẦN 1: LẤY NGÀY ĐỂ TÍNH TOÁN BỘ ĐẾM
         let startDate;
         
-        if (window.dataManager && window.dataManager.getStartDate) {
-            startDate = window.dataManager.getStartDate();
-            console.log('📅 Start date from dataManager:', startDate);
-        } else {
-            startDate = new Date(2026, 0, 1, 0, 0, 0);
-            console.log('📅 Start date from default:', startDate);
+        // Ưu tiên data từ Firebase
+        if (firebaseData && firebaseData.coupleInfo && firebaseData.coupleInfo.startDate) {
+            startDate = new Date(firebaseData.coupleInfo.startDate);
+            console.log('📅 Start date from Firebase data:', startDate);
+        }
+        // Sau đó đến dataManager
+        else if (window.dataManager && window.dataManager.currentData) {
+            const savedDate = window.dataManager.currentData.coupleInfo.startDate;
+            if (savedDate) {
+                startDate = new Date(savedDate);
+                console.log('📅 Start date from dataManager:', startDate);
+            }
         }
         
-        // Đảm bảo startDate là Date object hợp lệ
-        if (!(startDate instanceof Date) || isNaN(startDate.getTime())) {
-            console.warn('⚠️ Invalid start date, using default');
+        // Fallback về ngày mặc định
+        if (!startDate || isNaN(startDate.getTime())) {
             startDate = new Date(2026, 0, 1, 0, 0, 0);
+            console.log('📅 Start date from default:', startDate);
         }
         
         // Đặt giờ về 00:00:00
         startDate.setHours(0, 0, 0, 0);
         
-        // PHẦN 2: HIỂN THỊ NGÀY BẮT ĐẦU - LUÔN LÀ 1/1/2026
-        // Đây là phần bạn cần sửa để FIX hiển thị
-        const displayDate = new Date(2026, 0, 1); // THÁNG 0 = THÁNG 1
-        
+        // HIỂN THỊ NGÀY BẮT ĐẦU - LUÔN LÀ 1/1/2026
+        const displayDate = new Date(2026, 0, 1);
         const startDateStr = displayDate.toLocaleDateString('vi-VN', {
             weekday: 'long',
             day: 'numeric',
@@ -411,10 +467,9 @@ function initCountdown() {
         
         if (countdownDateElement) {
             countdownDateElement.textContent = `Bắt đầu từ: ${startDateStr}`;
-            console.log('📝 Display date (FIXED to 1/1/2026):', startDateStr);
         }
         
-        // PHẦN 3: BẮT ĐẦU BỘ ĐẾM
+        // BẮT ĐẦU BỘ ĐẾM
         updateCountdown(startDate);
         setInterval(() => updateCountdown(startDate), 1000);
         
@@ -423,7 +478,7 @@ function initCountdown() {
     } catch (error) {
         console.error('❌ Lỗi khi khởi tạo bộ đếm ngược:', error);
         
-        // FALLBACK: Hiển thị ngày 1/1/2026
+        // FALLBACK
         const countdownDateElement = document.getElementById('countdownDate');
         if (countdownDateElement) {
             countdownDateElement.textContent = `Bắt đầu từ: Thứ Năm, 1 tháng 1, 2026`;
@@ -439,8 +494,8 @@ function updateCountdown(startDate) {
     try {
         const now = new Date();
         
-        // Đảm bảo cả hai đều ở múi giờ Việt Nam
-        const nowVN = new Date(now.getTime() + (7 * 60 * 60 * 1000)); // GMT+7
+        // Tính toán múi giờ Việt Nam (GMT+7)
+        const nowVN = new Date(now.getTime() + (7 * 60 * 60 * 1000));
         const startDateVN = new Date(startDate.getTime() + (7 * 60 * 60 * 1000));
         
         // Chỉ lấy phần ngày để tính số ngày chính xác
@@ -469,7 +524,49 @@ function updateCountdown(startDate) {
     }
 }
 
-// Tạo trái tim bay
+// Tải memories nếu empty (nhận data từ Firebase)
+function loadMemoriesIfEmpty(firebaseData = null) {
+    try {
+        // Nếu có data từ Firebase và có memories thì không cần tạo mẫu
+        if (firebaseData && firebaseData.memories && firebaseData.memories.length > 0) {
+            console.log(`📝 Có ${firebaseData.memories.length} memories từ Firebase`);
+            return;
+        }
+        
+        if (!window.dataManager) return;
+
+        const memories = window.dataManager.currentData.memories;
+        if (memories.length === 0) {
+            const sampleMemories = [
+                {
+                    title: "Ngày đầu tiên gặp nhau",
+                    content: "Khoảnh khắc đầu tiên nhìn thấy nhau, tim tôi như ngừng đập...",
+                    date: new Date().toISOString().split('T')[0],
+                    location: "Quán cà phê ABC",
+                    tags: ["first-meet", "special"]
+                },
+                {
+                    title: "Lần đầu hẹn hò",
+                    content: "Chúng ta đã nói chuyện suốt 3 tiếng mà không biết chán!",
+                    date: new Date().toISOString().split('T')[0],
+                    location: "Rạp chiếu phim XYZ",
+                    tags: ["first-date", "movie"]
+                }
+            ];
+
+            sampleMemories.forEach(memory => {
+                window.dataManager.addMemory(memory);
+            });
+
+            console.log('✅ Đã thêm kỷ niệm mẫu');
+        }
+    } catch (error) {
+        console.error('❌ Lỗi khi tải memories:', error);
+    }
+}
+
+// ==================== UI FUNCTIONS ====================
+
 function createFloatingHearts() {
     try {
         const heartsContainer = document.getElementById('floatingHearts');
@@ -516,53 +613,14 @@ function createSingleHeart(container, index) {
     }, (duration + delay) * 1000);
 }
 
-// Tải memories nếu empty
-function loadMemoriesIfEmpty() {
-    try {
-        if (!window.dataManager) return;
-
-        const memories = window.dataManager.currentData.memories;
-        if (memories.length === 0) {
-            const sampleMemories = [
-                {
-                    title: "Ngày đầu tiên gặp nhau",
-                    content: "Khoảnh khắc đầu tiên nhìn thấy nhau, tim tôi như ngừng đập...",
-                    date: new Date().toISOString().split('T')[0],
-                    location: "Quán cà phê ABC",
-                    tags: ["first-meet", "special"]
-                },
-                {
-                    title: "Lần đầu hẹn hò",
-                    content: "Chúng ta đã nói chuyện suốt 3 tiếng mà không biết chán!",
-                    date: new Date().toISOString().split('T')[0],
-                    location: "Rạp chiếu phim XYZ",
-                    tags: ["first-date", "movie"]
-                }
-            ];
-
-            sampleMemories.forEach(memory => {
-                window.dataManager.addMemory(memory);
-            });
-
-            console.log('✅ Đã thêm kỷ niệm mẫu');
-        }
-    } catch (error) {
-        console.error('❌ Lỗi khi tải memories:', error);
-    }
-}
-
-// Cập nhật lời chào theo thời gian
+// Cập nhật lời chào
 function updateGreeting() {
-    try {
-        // Bỏ phần greeting vì không có phần tử loveMessage
-        console.log('ℹ️ Bỏ qua updateGreeting vì không có loveMessage element');
-
-    } catch (error) {
-        console.error('❌ Lỗi khi cập nhật greeting:', error);
-    }
+    // Bỏ phần greeting vì không có phần tử loveMessage
+    console.log('ℹ️ Bỏ qua updateGreeting');
 }
 
-// Modal xem ảnh
+// ==================== MODAL FUNCTIONS ====================
+
 function setupPhotoModal() {
     try {
         if (!document.getElementById('photoModal')) {
@@ -845,22 +903,12 @@ function showErrorState(elementId, message) {
     }
 }
 
-// Thiết lập event listeners
-function setupEventListeners() {
+// Thiết lập event listeners cơ bản
+function setupBasicEventListeners() {
     try {
         // Theme từ localStorage
         if (localStorage.getItem('loveTheme') === 'dark') {
             document.body.classList.add('dark-theme');
-        }
-
-        // Lắng nghe sự kiện từ dataManager để re-render ảnh
-        if (window.dataManager) {
-            ['photoAdded', 'photoUpdated', 'photoDeleted'].forEach(eventName => {
-                document.addEventListener(eventName, () => {
-                    console.log(`📸 ${eventName} event received, re-rendering photos`);
-                    renderPhotosFromData();
-                });
-            });
         }
 
     } catch (error) {
@@ -869,4 +917,4 @@ function setupEventListeners() {
 }
 
 // Log version
-console.log('💖 Love Anniversary App v2.2 - Đã sửa hoàn toàn lỗi audio và photos');
+console.log('💖 Love Anniversary App v3.0 - Firebase Integrated');
